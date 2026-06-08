@@ -1,0 +1,30 @@
+# Credentials — never commit these
+.env
+*.env
+credentials.py
+secrets.py
+
+# Snowflake connection files
+snowflake_config.py
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.Python
+env/
+venv/
+.venv/
+
+# Mac
+.DS_Store
+.AppleDouble
+
+# Data files — too large for GitHub
+medicare_inpatient_2024.csv
+Hospital_General_Information.csv
+drgweight2024FR.csv
+MUP_INP_*.CSV
+
+# Streamlit
+.streamlit/secrets.toml
