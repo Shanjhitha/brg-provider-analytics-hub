@@ -17,53 +17,7 @@ The hub answers two core questions a healthcare consultant asks before walking i
 ---
 
 ## Architecture
-
-```
-CMS Medicare Inpatient Data (145,879 rows)
-CMS Hospital General Information (5,432 hospitals)          RAW LAYER
-CMS MS-DRG MDC Crosswalk (766 DRGs)                        (Snowflake)
-Health System Reference Table (68 keyword mappings)
-                    │
-                    ▼
-        ┌───────────────────────────┐
-        │   CLEAN LAYER (Snowflake) │
-        │                           │
-        │  FACT_PROVIDER_SERVICE_   │
-        │  LINE_VOLUME              │
-        │                           │
-        │  3-way JOIN:              │
-        │  • Medicare + MDC crosswalk│
-        │    (DRG → Service Line)   │
-        │  • Medicare + Hospital    │
-        │    General Info (CCN)     │
-        │  • Medicare + Health      │
-        │    System Reference       │
-        └───────────────────────────┘
-                    │
-                    ▼
-        ┌───────────────────────────┐
-        │ ANALYTICS LAYER (Snowflake│
-        │                           │
-        │  VW_MARKET_SHARE          │
-        │  • Market share %         │
-        │  • Competitive rankings   │
-        │  • Payment benchmarks     │
-        └───────────────────────────┘
-                    │
-                    ▼
-        ┌───────────────────────────┐
-        │   Streamlit Dashboard     │
-        │   (localhost:8501)        │
-        │                           │
-        │  6 Pages:                 │
-        │  • Executive Summary      │
-        │  • Market Share Analysis  │
-        │  • Service Line Analysis  │
-        │  • Competitor Landscape   │
-        │  • Pursuit Analytics      │
-        │  • Definitions & Sources  │
-        └───────────────────────────┘
-```
+![Architecture Diagram](architecture.png)
 
 ---
 
@@ -109,47 +63,7 @@ Individual hospitals are grouped under parent health systems using keyword match
 
 ## Snowflake Data Model
 
-```
-RAW.HOSPITAL_GENERAL_INFO          RAW.MEDICARE_INPATIENT_VOLUME
-├── FACILITY_ID (CCN) ─────────────├── CCN
-├── FACILITY_NAME                  ├── PROVIDER_NAME
-├── CITY                           ├── STATE
-├── STATE                          ├── DRG_CODE ──────────┐
-├── HOSPITAL_TYPE                  ├── DRG_DESC           │
-└── OVERALL_RATING                 ├── TOTAL_DISCHARGES   │
-                                   ├── AVG_TOTAL_PAYMENT  │
-RAW.HEALTH_SYSTEM_REFERENCE        └── AVG_COVERED_CHARGES│
-├── KEYWORD                                               │
-└── HEALTH_SYSTEM                  RAW.DRG_MDC_CROSSWALK  │
-                                   ├── MS_DRG ────────────┘
-                                   ├── MDC
-                                   └── MSDRG_TITLE
-
-                    ▼ (3-way JOIN in CLEAN layer)
-
-CLEAN.FACT_PROVIDER_SERVICE_LINE_VOLUME
-├── CCN
-├── HOSPITAL_NAME
-├── HEALTH_SYSTEM
-├── STATE
-├── SERVICE_LINE
-├── MDC
-├── TOTAL_DISCHARGES
-├── AVG_TOTAL_PAYMENT
-└── LOAD_TIMESTAMP
-
-                    ▼ (CTEs + window functions)
-
-ANALYTICS.VW_MARKET_SHARE
-├── STATE
-├── HEALTH_SYSTEM
-├── SERVICE_LINE
-├── SYSTEM_DISCHARGES
-├── TOTAL_MARKET_DISCHARGES
-├── MARKET_SHARE_PCT
-├── AVG_PAYMENT
-└── MARKET_RANK
-```
+![Data Model](data_model.png)
 
 ---
 
@@ -259,14 +173,14 @@ This project was built with **significant AI assistance from Claude (Anthropic)*
 ### What I designed and decided independently:
 - **Market share methodology** — defined numerator/denominator logic before any code was written
 - **Data model design** — fact table grain, primary key, column rationale
-- **Core SQL logic** — wrote the CTE market share query independently; it was correct on first attempt
+- **Core SQL logic** — wrote the CTE market share query independently; 
 - **Dataset narrative design** — decided which patterns to build in (declining orthopedics, surging cardiology, etc.)
 - **Architecture decisions** — three-layer pipeline, why LEFT JOIN over INNER JOIN, why MDC crosswalk over manual mapping, why reference table over hardcoded CASE WHEN
 - **Business framing** — proof-of-concept scope, Virginia as demo market, national scalability
 - **Critical pivots** — pushed back on mock data and insisted on real CMS data; identified geographic tension in the dataset; questioned hardcoded mappings
 
 ### How to think about this:
-AI accelerated implementation. All analytical thinking, business judgment, and architectural decisions were made by the analyst. This mirrors how consultants use tools — Excel didn't build your model, you did.
+AI accelerated implementation. All analytical thinking, business judgment, and architectural decisions were made by the summer associate.
 
 ---
 
